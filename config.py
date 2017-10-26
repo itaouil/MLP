@@ -13,10 +13,14 @@
     Instructor  : Dr. Matteo Leonetti
 """
 
+# Import packages
+import math
+import numpy as np
+
 data = {
 
-    # Angle for R matrix
-    "angle"     : 75,
+    # Angle for R matrix (radians)
+    "angle"     : math.radians(-75),
 
     # Number of points
     "size"      : 500,
@@ -32,5 +36,13 @@ data = {
     "c2_x_high" : 3,
     "c2_y_low"  : -5,
     "c2_y_high" : -1,
+
+    # C3 mean and covariance arrays
+    "c3_mean"   : [-2, -3],
+    "c3_cov"    : [[0.5, 0], [0, 3]],
+
+    # C4 mean and covariance arrays
+    "c4_mean"   : [-4, -1],
+    "c4_cov"    : [[3, 0.5], [0.5, 0.5]]
 
 }
