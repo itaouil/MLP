@@ -43,6 +43,9 @@ data = {
 
     # C4 mean and covariance arrays
     "c4_mean"   : [-4, -1],
-    "c4_cov"    : [[3, 0.5], [0.5, 0.5]]
+    "c4_cov"    : [[3, 0.5], [0.5, 0.5]],
+
+    # Class dimension
+    "dim" : (500, 1)
 
 }

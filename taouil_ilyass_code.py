@@ -19,6 +19,10 @@ import matplotlib.pyplot as plt
 # Import configuration file
 import config as cf
 
+# Generate a filled vector
+def filled_vector(fill_value):
+    return np.full(cf.data["dim"], fill_value)
+
 # Generate datasets
 def generate_dataset():
 
@@ -55,15 +59,63 @@ def generate_dataset():
 
     """
         Add relative class to
-        each classifier.
+        each classifier class
     """
 
-    # Plot classes' points
-    plt.plot(c1.T[0], c1.T[1], 'ro')
-    plt.plot(c2.T[0], c2.T[1], 'bo')
-    plt.plot(c3.T[0], c3.T[1], 'go')
-    plt.plot(c4.T[0], c4.T[1], 'co')
-    plt.axis([-10,7,-10,6])
-    plt.show()
+    # Add class to C1
+    class1 = np.column_stack((c1, filled_vector(1)))
 
-generate_dataset()
+    # Add class to C2
+    class2 = np.column_stack((c2, filled_vector(2)))
+
+    # Add class to C3
+    class3 = np.column_stack((c3, filled_vector(3)))
+
+    # Add class to C4
+    class4 = np.column_stack((c4, filled_vector(4)))
+
+    """
+        Concatenate arrays
+        into one array
+    """
+
+    # Concatenate arrays
+    matrix = np.concatenate((class1, class2, class3, class4))
+
+    """
+        Shuffle matrix
+    """
+
+    # Shuffle matrix randomly
+    np.random.shuffle(matrix)
+
+    """
+        Plot points
+    """
+
+    # # Plot classes' points
+    # plt.plot(c1.T[0], c1.T[1], 'ro')
+    # plt.plot(c2.T[0], c2.T[1], 'bo')
+    # plt.plot(c3.T[0], c3.T[1], 'go')
+    # plt.plot(c4.T[0], c4.T[1], 'co')
+    # plt.axis([-10,7,-10,6])
+    # plt.show()
+
+    return matrix[:1000], matrix[1000:1500], matrix[1500:]
+
+train, validation, test = generate_dataset()
+
+print("Training", train)
+print("Training shape", train.shape)
+print("Training size", train.size)
+print("Training len", len(train))
+
+print("Validation", validation)
+print("Validation shape", validation.shape)
+print("Validation size", validation.size)
+print("Validation len", len(validation))
+
+print("Test", test)
+print("Test shape", test.shape)
+print("Test size", test.size)
+print("Test len", len(test))
