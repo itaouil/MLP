@@ -46,6 +46,9 @@ data = {
     "c4_cov"    : [[3, 0.5], [0.5, 0.5]],
 
     # Class dimension
-    "dim" : (500, 1)
+    "dim"       : (500, 1),
+
+    # w1 dimesion
+    "w_dim"     : (3, 2)
 
 }

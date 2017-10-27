@@ -3,8 +3,8 @@
 """
     The following Python file contains
     all the functions used to generate
-    the datasets, as well as training,
-    evaluating and testing the MLP.
+    the datasets, train and evaluate
+    the MLP.
 
     Author      : Ilyass Taouil
     Module      : Machine Learning
@@ -14,86 +14,64 @@
 # Import packages
 import math
 import numpy as np
+import config as cf
 import matplotlib.pyplot as plt
 
-# Import configuration file
-import config as cf
+"""
+    Generates datasets and
+    returns the three sets
+    for the MLP algorithm.
 
-# Generate a filled vector
-def filled_vector(fill_value):
-    return np.full(cf.data["dim"], fill_value)
-
-# Generate datasets
+    Input   : None
+    Output  : Array of arrays
+"""
 def generate_dataset():
 
-    """
-        Classifier1 and Classifier2
-    """
-
-    # Class1 points: 2D array formed by stacking x and y arrays
+    # Generate points for class1
     c1 = np.column_stack((np.random.uniform(cf.data["c1_x_low"], cf.data["c1_x_high"], cf.data["size"]),
                           np.random.uniform(cf.data["c1_y_low"], cf.data["c1_y_high"], cf.data["size"])))
 
-    # Class2 points: 2D array formed by stacking x and y arrays
+    # Generate points for class2
     c2 = np.column_stack((np.random.uniform(cf.data["c2_x_low"], cf.data["c2_x_high"], cf.data["size"]),
                           np.random.uniform(cf.data["c2_y_low"], cf.data["c2_y_high"], cf.data["size"])))
 
-    # Define matrix R
+    # Rotation matrix (R)
     R = np.array([ [math.cos(cf.data["angle"]), -math.sin(cf.data["angle"])],
                    [math.sin(cf.data["angle"]), math.cos(cf.data["angle"])] ])
 
-    # C1 and C2 points rotation
+    # Rotate class1 and class2 points
     for x in range(cf.data["size"]):
         c1[x] = np.dot(c1[x], R)
         c2[x] = np.dot(c2[x], R)
 
-    """
-        Classifier3 and Classifier4
-    """
-
-    # Class3 points generation
+    # Generate points for class3
     c3 = np.random.multivariate_normal(cf.data["c3_mean"], cf.data["c3_cov"], cf.data["size"])
 
-    # Class4 points generation
+    # Generate points for class4
     c4 = np.random.multivariate_normal(cf.data["c4_mean"], cf.data["c4_cov"], cf.data["size"])
 
-    """
-        Add relative class to
-        each classifier class
-    """
+    # Add columns of 1s to class1
+    class1 = np.column_stack((c1, np.full(cf.data["dim"], 1)))
 
-    # Add class to C1
-    class1 = np.column_stack((c1, filled_vector(1)))
+    # Add columns of 2s to class2
+    class2 = np.column_stack((c2, np.full(cf.data["dim"], 2)))
 
-    # Add class to C2
-    class2 = np.column_stack((c2, filled_vector(2)))
+    # Add columns of 3s to class3
+    class3 = np.column_stack((c3, np.full(cf.data["dim"], 3)))
 
-    # Add class to C3
-    class3 = np.column_stack((c3, filled_vector(3)))
+    # Add columns of 4s to class4
+    class4 = np.column_stack((c4, np.full(cf.data["dim"], 4)))
 
-    # Add class to C4
-    class4 = np.column_stack((c4, filled_vector(4)))
-
-    """
-        Concatenate arrays
-        into one array
-    """
-
-    # Concatenate arrays
+    # Aggregate classes together in one bigger matrix (2000,3)
     matrix = np.concatenate((class1, class2, class3, class4))
 
-    """
-        Shuffle matrix
-    """
-
-    # Shuffle matrix randomly
+    # Randomly order data
     np.random.shuffle(matrix)
 
-    """
-        Plot points
-    """
+    # Normalise dataset
+    matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
 
-    # # Plot classes' points
+    # Plot classes' points
     # plt.plot(c1.T[0], c1.T[1], 'ro')
     # plt.plot(c2.T[0], c2.T[1], 'bo')
     # plt.plot(c3.T[0], c3.T[1], 'go')
@@ -101,21 +79,49 @@ def generate_dataset():
     # plt.axis([-10,7,-10,6])
     # plt.show()
 
+    # Returns training, evaluation and testing sets
     return matrix[:1000], matrix[1000:1500], matrix[1500:]
 
-train, validation, test = generate_dataset()
+"""
+    Train the MLP with the
+    forward fit, followed
+    by the backpropagation
+    phase.
 
-print("Training", train)
-print("Training shape", train.shape)
-print("Training size", train.size)
-print("Training len", len(train))
+    Input   : Weights, # of layer nodes, step size, training set
+    Output  : Updated weights
+"""
+def train_mlp(w, h, eta, D):
 
-print("Validation", validation)
-print("Validation shape", validation.shape)
-print("Validation size", validation.size)
-print("Validation len", len(validation))
+    # Encode targets
+    target = np.zeros((np.shape(D)[0], 4))
 
-print("Test", test)
-print("Test shape", test.shape)
-print("Test size", test.size)
-print("Test len", len(test))
+    indices = np.where(D[:,2] == 1)
+    target[indices,0] = 1
+
+    indices = np.where(D[:,2] == 2)
+    target[indices,1] = 1
+
+    indices = np.where(D[:,2] == 3)
+    target[indices,2] = 1
+
+    indices = np.where(D[:,2] == 4)
+    target[indices,3] = 1
+
+    # Forward phase
+    for n in range(h):
+        for inp in D:
+
+train_mlp(generate_dataset()[0])
+
+"""
+    Main.
+"""
+
+def main():
+
+    # Random weights
+    w = np.random.uniform(-0.5, 0.5, cf.data["w_dim"])
+
+    # Get datasets
+    training, validation, test = generate_dataset()
