@@ -88,31 +88,72 @@ def generate_dataset():
     by the backpropagation
     phase.
 
-    Input   : Weights, # of layer nodes, step size, training set
+    Input   : Weights, # of hidden nodes, step size, training set
     Output  : Updated weights
 """
-def train_mlp(w, h, eta, D):
+def train_mlp(w1,w2,h,eta,D):
+
+    print("W1: ", w1)
 
     # Encode targets
-    target = np.zeros((np.shape(D)[0], 4))
+    t = np.zeros((np.shape(D)[0], 4))
 
+    # Class1 as [1, 0, 0, 0]
     indices = np.where(D[:,2] == 1)
-    target[indices,0] = 1
+    t[indices,0] = 1
 
+    # Class2 as [0, 1, 0, 0]
     indices = np.where(D[:,2] == 2)
-    target[indices,1] = 1
+    t[indices,1] = 1
 
+    # Class3 as [0, 0, 1, 0]
     indices = np.where(D[:,2] == 3)
-    target[indices,2] = 1
+    t[indices,2] = 1
 
+    # Class4 as [0, 0, 0, 1]
     indices = np.where(D[:,2] == 4)
-    target[indices,3] = 1
+    t[indices,3] = 1
 
-    # Forward phase
-    for n in range(h):
-        for inp in D:
+    print("Original matrix: ", D)
 
-train_mlp(generate_dataset()[0])
+    # Add bias input to D
+    D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
+
+    # Hidden layer's output
+    aj = []
+
+    # Activation function
+    act_step = lambda x: 0 if x < 0 else 1
+
+    # Forward phase (hidden layer)
+    for x in D:
+        temp = []
+        for n in range(h):
+            # Storing outputs per input
+            temp.append(act_step( 1 / (1 + math.exp(-1 * np.sum(np.dot(x, w1[:, n]))) )))
+
+        # Add bias input
+        temp.append(-1)
+
+        # Store output's layer input
+        aj.append(temp)
+
+    # Output layer's output
+    y = []
+
+    # Forware phase (output layer)
+    for x in aj:
+        temp = []
+        for n in range(4):
+            # Storing outputs per input
+            temp.append(act_step( 1 / (1 + math.exp(-1 * np.sum(np.dot(x, w2[:, n]))) )))
+
+        # Store output's layer output (per input)
+        y.append(temp)
+
+    print("Matrix: ", D)
+    print("Target: ", t)
+    print("Output: ", y)
 
 """
     Main.
@@ -121,7 +162,15 @@ train_mlp(generate_dataset()[0])
 def main():
 
     # Random weights
-    w = np.random.uniform(-0.5, 0.5, cf.data["w_dim"])
+    w1 = np.random.uniform(-0.5, 0.5, cf.data["w1_dim"])
+    w2 = np.random.uniform(-0.5, 0.5, cf.data["w2_dim"])
 
     # Get datasets
     training, validation, test = generate_dataset()
+
+    # Call MLP training
+    train_mlp(w1, w2, 3, 0.3, training)
+
+# Check if the node is executing in the main path
+if __name__ == '__main__':
+    main()

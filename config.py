@@ -25,6 +25,9 @@ data = {
     # Number of points
     "size"      : 500,
 
+    # Hidden nodes
+    "h"         : 3,
+
     # C1 rectagle size
     "c1_x_low"  : 2,
     "c1_x_high" : 5,
@@ -49,6 +52,9 @@ data = {
     "dim"       : (500, 1),
 
     # w1 dimesion
-    "w_dim"     : (3, 2)
+    "w1_dim"     : (3, 3),
+
+    # w2 dimesion
+    "w2_dim"     : (3+1, 4)
 
 }
