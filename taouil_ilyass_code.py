@@ -93,8 +93,6 @@ def generate_dataset():
 """
 def train_mlp(w1,w2,h,eta,D):
 
-    print("W1: ", w1)
-
     # Encode targets
     t = np.zeros((np.shape(D)[0], 4))
 
@@ -114,63 +112,33 @@ def train_mlp(w1,w2,h,eta,D):
     indices = np.where(D[:,2] == 4)
     t[indices,3] = 1
 
-    print("Original matrix: ", D)
+    # Define sigmoid function
+    sigmoid = lambda x: 1 / (1 + math.exp(-1 * x))
 
-    # Add bias input to D
+    # Add bias input to D (in place of target)
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
-    # Hidden layer's output
-    zi = []
-
-    # Activation function
-    act_step = lambda x: 0 if x < 0 else 1
-
     # Forward phase (hidden layer)
-    for x in D:
-        temp = []
-        for n in range(h):
-            # Storing outputs per input
-            temp.append(act_step( 1 / (1 + math.exp(-1 * np.sum(np.dot(x, w1[:, n]))) )))
+    zi = np.dot(D, w1)
 
-        # Add bias input
-        temp.append(-1)
-
-        # Store output's layer input
-        zi.append(temp)
-
-    # Output layer's output
-    zj = []
-
-    # Forware phase (output layer)
+    # Apply sigmoid to zi
     for x in zi:
-        temp = []
+        for n in range(h):
+            x[n] = sigmoid(x[n])
+
+    # Add bias input to zi
+    zi = np.column_stack((zi, np.full((np.shape(zi)[0], 1), -1).ravel()))
+
+    # Forward phase (ouput layer)
+    zj = np.dot(zi, w2)
+
+    # Apply sigmoid to zi
+    for x in zj:
         for n in range(4):
-            # Storing outputs per input
-            temp.append(act_step( 1 / (1 + math.exp(-1 * np.sum(np.dot(x, w2[:, n]))) )))
-
-        # Store output's layer output (per input)
-        zj.append(temp)
-
-    print("W2 before: ", w2)
-
-    # Backward phase
-    for i in range(h):
-        for j in range(4):
-
-            # Compute delta for j
-            delta_j = (zj[i][j] - t[i][j]) * zj[i][j] * (1 - zj[i][j])
-
-            # Update weight
-            w2[i,j] = w2[i,j] -  eta * delta_j * zi[i][j]
-
-    print("w2 after: ", w2)
-
-    print("Matrix: ", D)
-    print("Target: ", t)
-    print("Output: ", zj)
+            x[n] = sigmoid(x[n])
 
 """
-    Mzin.
+    Main.
 """
 
 def main():
