@@ -18,6 +18,33 @@ import config as cf
 import matplotlib.pyplot as plt
 
 """
+    Helper functions.
+"""
+# Encode classes for given dataset
+def encode(dataset):
+
+    # Encode targets
+    targets = np.zeros((np.shape(dataset)[0], 4))
+
+    # Class1 as [1, 0, 0, 0]
+    indices = np.where(dataset[:,2] == 1)
+    targets[indices,0] = 1
+
+    # Class2 as [0, 1, 0, 0]
+    indices = np.where(dataset[:,2] == 2)
+    targets[indices,1] = 1
+
+    # Class3 as [0, 0, 1, 0]
+    indices = np.where(dataset[:,2] == 3)
+    targets[indices,2] = 1
+
+    # Class4 as [0, 0, 0, 1]
+    indices = np.where(dataset[:,2] == 4)
+    targets[indices,3] = 1
+
+    return targets
+
+"""
     Generates datasets and
     returns the three sets
     for the MLP algorithm.
@@ -93,49 +120,42 @@ def generate_dataset():
 """
 def train_mlp(w1,w2,h,eta,D):
 
-    # Encode targets
-    t = np.zeros((np.shape(D)[0], 4))
-
-    # Class1 as [1, 0, 0, 0]
-    indices = np.where(D[:,2] == 1)
-    t[indices,0] = 1
-
-    # Class2 as [0, 1, 0, 0]
-    indices = np.where(D[:,2] == 2)
-    t[indices,1] = 1
-
-    # Class3 as [0, 0, 1, 0]
-    indices = np.where(D[:,2] == 3)
-    t[indices,2] = 1
-
-    # Class4 as [0, 0, 0, 1]
-    indices = np.where(D[:,2] == 4)
-    t[indices,3] = 1
+    # Get targets for training dataset
+    t = encode(D)
 
     # Define sigmoid function
     sigmoid = lambda x: 1 / (1 + math.exp(-1 * x))
 
+    # Vectorize sigmoid function
+    vsigmoid = np.vectorize(sigmoid)
+
     # Add bias input to D (in place of target)
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
-    # Forward phase (hidden layer)
-    zi = np.dot(D, w1)
+    # Forward phase (hidden layer) + sigmoid + bias input
+    zj = np.column_stack((vsigmoid(np.dot(D, w1)), np.full((np.shape(zj)[0], 1), -1).ravel()))
 
-    # Apply sigmoid to zi
-    for x in zi:
-        for n in range(h):
-            x[n] = sigmoid(x[n])
+    # Forward phase (output layer) + sigmoid
+    zk = vsigmoid(np.dot(zj, w2))
 
-    # Add bias input to zi
-    zi = np.column_stack((zi, np.full((np.shape(zi)[0], 1), -1).ravel()))
+    # Backpropagation
+    # for r in range(len(D)):
+    #
+    #     # Caching deltaj
+    #     deltaj = []
+    #
+    #     # Outer neurons
+    #     for j in range(h+1):
+    #         tmp = 0
+    #         for k in range(4):
+    #             delta = (zk[r,k] - t[r,k]) * zk[r,k] * (1 - zk[r,k])
+    #             w2[j,k] = w2[j,k] - eta * delta * zj[r,j]
+    #
+    #     # Inner neurons
+    #     for i in range(3):
+    #         for j in range(h+1):
 
-    # Forward phase (ouput layer)
-    zj = np.dot(zi, w2)
 
-    # Apply sigmoid to zi
-    for x in zj:
-        for n in range(4):
-            x[n] = sigmoid(x[n])
 
 """
     Main.
