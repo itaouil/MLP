@@ -1,9 +1,9 @@
 #!/usr/bin/env/python
 
 """
-    The following Python file contains
+    The following Python file contzins
     all the functions used to generate
-    the datasets, train and evaluate
+    the datasets, trzin and evaluate
     the MLP.
 
     Author      : Ilyass Taouil
@@ -79,16 +79,16 @@ def generate_dataset():
     # plt.axis([-10,7,-10,6])
     # plt.show()
 
-    # Returns training, evaluation and testing sets
+    # Returns trzining, evaluation and testing sets
     return matrix[:1000], matrix[1000:1500], matrix[1500:]
 
 """
-    Train the MLP with the
+    Trzin the MLP with the
     forward fit, followed
     by the backpropagation
     phase.
 
-    Input   : Weights, # of hidden nodes, step size, training set
+    Input   : Weights, # of hidden nodes, step size, trzining set
     Output  : Updated weights
 """
 def train_mlp(w1,w2,h,eta,D):
@@ -120,7 +120,7 @@ def train_mlp(w1,w2,h,eta,D):
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
     # Hidden layer's output
-    aj = []
+    zi = []
 
     # Activation function
     act_step = lambda x: 0 if x < 0 else 1
@@ -136,27 +136,41 @@ def train_mlp(w1,w2,h,eta,D):
         temp.append(-1)
 
         # Store output's layer input
-        aj.append(temp)
+        zi.append(temp)
 
     # Output layer's output
-    y = []
+    zj = []
 
     # Forware phase (output layer)
-    for x in aj:
+    for x in zi:
         temp = []
         for n in range(4):
             # Storing outputs per input
             temp.append(act_step( 1 / (1 + math.exp(-1 * np.sum(np.dot(x, w2[:, n]))) )))
 
         # Store output's layer output (per input)
-        y.append(temp)
+        zj.append(temp)
+
+    print("W2 before: ", w2)
+
+    # Backward phase
+    for i in range(h):
+        for j in range(4):
+
+            # Compute delta for j
+            delta_j = (zj[i][j] - t[i][j]) * zj[i][j] * (1 - zj[i][j])
+
+            # Update weight
+            w2[i,j] = w2[i,j] -  eta * delta_j * zi[i][j]
+
+    print("w2 after: ", w2)
 
     print("Matrix: ", D)
     print("Target: ", t)
-    print("Output: ", y)
+    print("Output: ", zj)
 
 """
-    Main.
+    Mzin.
 """
 
 def main():
@@ -168,9 +182,9 @@ def main():
     # Get datasets
     training, validation, test = generate_dataset()
 
-    # Call MLP training
+    # Call MLP trzining
     train_mlp(w1, w2, 3, 0.3, training)
 
-# Check if the node is executing in the main path
+# Check if the node is executing in the mzin path
 if __name__ == '__main__':
     main()
