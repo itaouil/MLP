@@ -123,39 +123,40 @@ def train_mlp(w1,w2,h,eta,D):
     # Get targets for training dataset
     t = encode(D)
 
-    # Define sigmoid function
-    sigmoid = lambda x: 1 / (1 + math.exp(-1 * x))
-
-    # Vectorize sigmoid function
-    vsigmoid = np.vectorize(sigmoid)
+    # Vectorized sigmoid function
+    vsigmoid = np.vectorize(lambda x: 1 / (1 + math.exp(-1 * x)))
 
     # Add bias input to D (in place of target)
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
     # Forward phase (hidden layer) + sigmoid + bias input
-    zj = np.column_stack((vsigmoid(np.dot(D, w1)), np.full((np.shape(zj)[0], 1), -1).ravel()))
+    zj = np.column_stack((vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel()))
 
     # Forward phase (output layer) + sigmoid
     zk = vsigmoid(np.dot(zj, w2))
 
-    # Backpropagation
-    # for r in range(len(D)):
-    #
-    #     # Caching deltaj
-    #     deltaj = []
-    #
-    #     # Outer neurons
-    #     for j in range(h+1):
-    #         tmp = 0
-    #         for k in range(4):
-    #             delta = (zk[r,k] - t[r,k]) * zk[r,k] * (1 - zk[r,k])
-    #             w2[j,k] = w2[j,k] - eta * delta * zj[r,j]
-    #
-    #     # Inner neurons
-    #     for i in range(3):
-    #         for j in range(h+1):
+    for r in range(len(D)):
 
+        # Caching deltaj
+        deltaj = []
 
+        # Outer neurons
+        for j in range(h+1):
+            tmp = 0
+            for k in range(4):
+                delta = (zk[r,k] - t[r,k]) * zk[r,k] * (1 - zk[r,k])
+                w2[j,k] = w2[j,k] - eta * delta * zj[r,j]
+                tmp += delta * w2[j,k]
+
+            deltaj.append(tmp)
+
+        # Inner neurons
+        for i in range(3):
+            for j in range(h):
+                delta = zj[r,j] * (1 - zj[r,j]) * deltaj[j]
+                w1[i,j] = w1[i,j] - eta * delta * D[r,i]
+
+    return w1, w2
 
 """
     Main.
