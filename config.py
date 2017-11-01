@@ -52,9 +52,9 @@ data = {
     "dim"       : (500, 1),
 
     # w1 dimesion
-    "w1_dim"     : (3, 1),
+    "w1_dim"     : (3, 2),
 
     # w2 dimesion
-    "w2_dim"     : (1+1, 4)
+    "w2_dim"     : (2+1, 4)
 
 }

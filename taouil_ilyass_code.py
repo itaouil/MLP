@@ -189,7 +189,7 @@ def evaluate_mlp(w1,w2,D):
     # product and the result of it
     # is stacked together with a
     # bias input
-    zj = stack(vsigmoid(np.dot(x, w1)), np.full((np.shape(x)[0], 1), -1).ravel())
+    zj = stack(vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel())
 
     # Forward phase (output layer)
     # Please note that the sigmoid
@@ -201,16 +201,18 @@ def evaluate_mlp(w1,w2,D):
     # weights matrix given
     errors = np.sum(error_function(targets, zk))
 
+    return errors
+
 """
     Trains the MLP with the
     forward fit, followed
     by the backpropagation
     phase.
 
-    Input   : Weights, # of hidden nodes, step size, trzining set
+    Input   : w1, w2, # of hidden nodes, step size, training set, evalutaion set
     Output  : Updated weights
 """
-def train_mlp(w1,w2,h,eta,D):
+def train_mlp(w1,w2,h,eta,D,E):
 
     # Get targets for training dataset
     t = encode(D)
@@ -218,10 +220,11 @@ def train_mlp(w1,w2,h,eta,D):
     # Add bias input to D (in place of target)
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
-    # Errors
-    errors = []
+    # Validation error
+    val_error = evaluate_mlp(w1,w2,E)
 
-    for iteration in range(1000):
+    # Training + Validation
+    for x in range(1000):
 
         # Forward phase (hidden layer)
         # Please note that the sigmoid
@@ -237,10 +240,20 @@ def train_mlp(w1,w2,h,eta,D):
         # to the dot product
         zk = vsigmoid(np.dot(zj, w2))
 
+        # Check overfitting on
+        # the validation set and
+        # stop training accordingly
+        # (the checking is done every
+        # 20 iterations on the test set)
+        if x % 50 == 0 and val_error < evaluate_mlp(w1,w2,E):
+            break
+        elif x % 50 == 0 and val_error >= evaluate_mlp(w1,w2,E):
+            val_error = evaluate_mlp(w1,w2,E)
+
         # Backpropagation
         for r in range(len(D)):
 
-            # Caching deltaj
+            # Caching deltak
             deltak = []
 
             # Outer neurons wjk update
@@ -259,10 +272,12 @@ def train_mlp(w1,w2,h,eta,D):
                     delta = zj[r,j] * (1 - zj[r,j]) * deltak[j]
                     w1[i,j] -= eta * delta * D[r,i]
 
-        # Errors (training set)
-        print("Errors: ", np.sum(error_function(t, zk)))
+        # Print errors
+        print("Validation E:", evaluate_mlp(w1,w2,E))
 
-            # print(w1, w2)
+    print("Stopped training.")
+    print("Prev Eval E:", val_error)
+    print("Curr Eval E:", evaluate_mlp(w1,w2,E))
 
     # Plot results
     # for x in range(len(D)):
@@ -285,7 +300,7 @@ def main():
     training, validation, test = generate_dataset()
 
     # Call MLP training
-    train_mlp(w1, w2, 1, 0.01, training)
+    train_mlp(w1, w2, 2, 0.01, training, validation)
 
 # Check if the node is executing in the mzin path
 if __name__ == '__main__':
