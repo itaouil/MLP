@@ -48,20 +48,10 @@ def encode(dataset):
     return targets
 
 # Decode class
-# spitted by the
-# MLP
-def decode(ouput):
+def decode(output):
 
-    if output == [1,0,0,0]:
-        return 1
-    elif output == [0,1,0,0]:
-        return 2
-    elif output == [0,0,1,0]:
-        return 3
-    elif output == [0,0,0,1]:
-        return 4
-    else:
-        return -1
+    # Return class (1,2,3 or 4)
+    return np.argmax(output) + 1
 
 # Sigmoid function vectorization
 def vsigmoid(x):
@@ -136,7 +126,7 @@ def generate_dataset():
     np.random.shuffle(matrix)
 
     # Normalise dataset
-    # matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
+    matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
 
     # Plot classes' points
     # plt.plot(c1.T[0], c1.T[1], 'ro')
@@ -162,7 +152,9 @@ def classify_mlp(w1,w2,x):
     # product and the result of it
     # is stacked together with a
     # bias input
-    zj = stack(vsigmoid(np.dot(x, w1)), np.full((np.shape(x)[0], 1), -1).ravel())
+    # print(np.shape(vsigmoid(np.dot(x, w1))))
+    # print(np.shape(x))
+    zj = np.append(vsigmoid(np.dot(x, w1)), -1)
 
     # Forward phase (output layer)
     # Please note that the sigmoid
@@ -244,7 +236,7 @@ def train_mlp(w1,w2,h,eta,D,E):
         # the validation set and
         # stop training accordingly
         # (the checking is done every
-        # 20 iterations on the test set)
+        # 30 iterations on the test set)
         if x % 50 == 0 and val_error < evaluate_mlp(w1,w2,E):
             break
         elif x % 50 == 0 and val_error >= evaluate_mlp(w1,w2,E):
@@ -279,11 +271,6 @@ def train_mlp(w1,w2,h,eta,D,E):
     print("Prev Eval E:", val_error)
     print("Curr Eval E:", evaluate_mlp(w1,w2,E))
 
-    # Plot results
-    # for x in range(len(D)):
-    #     result = classify_mlp(w1, w2, D[x])
-    #     print("{}: {} -> {}".format(x[:2], result, t[x]))
-
     return w1, w2
 
 """
@@ -296,11 +283,19 @@ def main():
     w1 = np.random.uniform(-0.5, 0.5, cf.data["w1_dim"])
     w2 = np.random.uniform(-0.5, 0.5, cf.data["w2_dim"])
 
-    # Get datasets
+    # Retrieve datasets
     training, validation, test = generate_dataset()
 
-    # Call MLP training
-    train_mlp(w1, w2, 2, 0.01, training, validation)
+    # Train the MLP
+    train_mlp(w1, w2, 2, 0.02, training, validation)
+
+    # Classify the test set
+    t = encode(test)
+    print("Results")
+    for x in range(len(test)):
+        result = classify_mlp(w1, w2, test[x])
+        # print(result)
+        print("{}: {} -> {}".format(test[:2], result, decode(t[x])))
 
 # Check if the node is executing in the mzin path
 if __name__ == '__main__':
