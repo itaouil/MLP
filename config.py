@@ -26,7 +26,7 @@ data = {
     "size"      : 500,
 
     # Hidden nodes
-    "h"         : 3,
+    "h"         : 1,
 
     # C1 rectagle size
     "c1_x_low"  : 2,
@@ -52,9 +52,9 @@ data = {
     "dim"       : (500, 1),
 
     # w1 dimesion
-    "w1_dim"     : (3, 3),
+    "w1_dim"     : (3, 1),
 
     # w2 dimesion
-    "w2_dim"     : (3+1, 4)
+    "w2_dim"     : (1+1, 4)
 
 }

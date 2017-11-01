@@ -20,10 +20,13 @@ import matplotlib.pyplot as plt
 """
     Helper functions.
 """
-# Encode classes for given dataset
+# One hot encoding on
+# dataset inputs
 def encode(dataset):
 
-    # Encode targets
+    # Create nx4 vector to
+    # to hold the dataset
+    # classes
     targets = np.zeros((np.shape(dataset)[0], 4))
 
     # Class1 as [1, 0, 0, 0]
@@ -45,6 +48,8 @@ def encode(dataset):
     return targets
 
 # Decode class
+# spitted by the
+# MLP
 def decode(ouput):
 
     if output == [1,0,0,0]:
@@ -58,20 +63,14 @@ def decode(ouput):
     else:
         return -1
 
-# Vectorized sigmoid function
+# Sigmoid function vectorization
 def vsigmoid(x):
-
-    # Sigmoid function vectorized
-    f = np.vectorize(lambda x: 1 / (1 + math.exp(-1 * x)))
-
+    f = np.vectorize(lambda x: 1 / (1 + np.exp(-x)))
     return f(x)
 
-# Error function
-def errors(targets, outputs):
-
-    # Sum of Squared Difference function
+# Sum of Squared Difference function
+def error_function(targets, outputs):
     f = np.vectorize(lambda x,y: 0.5 * (x - y) ** 2)
-
     return f(targets, outputs)
 
 # Stacks two arrays together
@@ -137,17 +136,17 @@ def generate_dataset():
     np.random.shuffle(matrix)
 
     # Normalise dataset
-    matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
+    # matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
 
     # Plot classes' points
-    plt.plot(c1.T[0], c1.T[1], 'ro')
-    plt.plot(c2.T[0], c2.T[1], 'bo')
-    plt.plot(c3.T[0], c3.T[1], 'go')
-    plt.plot(c4.T[0], c4.T[1], 'co')
-    plt.axis([-10,7,-10,6])
-    plt.show()
+    # plt.plot(c1.T[0], c1.T[1], 'ro')
+    # plt.plot(c2.T[0], c2.T[1], 'bo')
+    # plt.plot(c3.T[0], c3.T[1], 'go')
+    # plt.plot(c4.T[0], c4.T[1], 'co')
+    # plt.axis([-10,7,-10,6])
+    # plt.show()
 
-    # Returns trzining, evaluation and testing sets
+    # Returns training, evaluation and testing sets
     return matrix[:1000], matrix[1000:1500], matrix[1500:]
 
 """
@@ -157,10 +156,18 @@ def generate_dataset():
 """
 def classify_mlp(w1,w2,x):
 
-    # Forward phase (hidden layer) + sigmoid + bias input
-    zj = np.column_stack((vsigmoid(np.dot(x, w1)), np.full((np.shape(x)[0], 1), -1).ravel()))
+    # Forward phase (hidden layer)
+    # Please note that the sigmoid
+    # is applied directly to the dot
+    # product and the result of it
+    # is stacked together with a
+    # bias input
+    zj = stack(vsigmoid(np.dot(x, w1)), np.full((np.shape(x)[0], 1), -1).ravel())
 
-    # Forward phase (output layer) + sigmoid
+    # Forward phase (output layer)
+    # Please note that the sigmoid
+    # function is applied directly
+    # to the dot product
     zk = vsigmoid(np.dot(zj, w2))
 
     # Decode output
@@ -176,14 +183,23 @@ def evaluate_mlp(w1,w2,D):
     # Get targets of dataset
     targets = encode(D)
 
-    # Forward phase (hidden layer) + sigmoid + bias input
-    zj = np.column_stack((vsigmoid(np.dot(x, w1)), np.full((np.shape(x)[0], 1), -1).ravel()))
+    # Forward phase (hidden layer)
+    # Please note that the sigmoid
+    # is applied directly to the dot
+    # product and the result of it
+    # is stacked together with a
+    # bias input
+    zj = stack(vsigmoid(np.dot(x, w1)), np.full((np.shape(x)[0], 1), -1).ravel())
 
-    # Forward phase (output layer) + sigmoid
+    # Forward phase (output layer)
+    # Please note that the sigmoid
+    # function is applied directly
+    # to the dot product
     zk = vsigmoid(np.dot(zj, w2))
 
-    # Compute errors
-    errors = np.sum(errors(targets, zk))
+    # Compute errors on the
+    # weights matrix given
+    errors = np.sum(error_function(targets, zk))
 
 """
     Trains the MLP with the
@@ -202,40 +218,56 @@ def train_mlp(w1,w2,h,eta,D):
     # Add bias input to D (in place of target)
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
-    # Forward phase (hidden layer)
-    # Please note that the sigmoid
-    # is applied directly to the dot
-    # product and the result of it
-    # is stacked together with a
-    # bias input
-    zj = np.column_stack((vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel()))
+    # Errors
+    errors = []
 
-    # Forward phase (output layer)
-    # Please note that the sigmoid
-    # function is applied directly
-    # to the dot product
-    zk = vsigmoid(np.dot(zj, w2))
+    for iteration in range(1000):
 
-    for r in range(len(D)):
+        # Forward phase (hidden layer)
+        # Please note that the sigmoid
+        # is applied directly to the dot
+        # product and the result of it
+        # is stacked together with a
+        # bias input
+        zj = np.column_stack((vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel()))
 
-        # Caching deltaj
-        deltaj = []
+        # Forward phase (output layer)
+        # Please note that the sigmoid
+        # function is applied directly
+        # to the dot product
+        zk = vsigmoid(np.dot(zj, w2))
 
-        # Outer neurons
-        for j in range(h+1):
-            tmp = 0
-            for k in range(4):
-                delta = (zk[r,k] - t[r,k]) * zk[r,k] * (1 - zk[r,k])
-                w2[j,k] = w2[j,k] - eta * delta * zj[r,j]
-                tmp += delta * w2[j,k]
+        # Backpropagation
+        for r in range(len(D)):
 
-            deltaj.append(tmp)
+            # Caching deltaj
+            deltak = []
 
-        # Inner neurons
-        for i in range(3):
-            for j in range(h):
-                delta = zj[r,j] * (1 - zj[r,j]) * deltaj[j]
-                w1[i,j] = w1[i,j] - eta * delta * D[r,i]
+            # Outer neurons wjk update
+            for j in range(h+1):
+                tmp = 0
+                for k in range(4):
+                    delta = (zk[r,k] - t[r,k]) * zk[r,k] * (1 - zk[r,k])
+                    w2[j,k] -= eta * delta * zj[r,j]
+                    tmp += delta * w2[j,k]
+
+                deltak.append(tmp)
+
+            # Inner neurons wij update
+            for i in range(3):
+                for j in range(h):
+                    delta = zj[r,j] * (1 - zj[r,j]) * deltak[j]
+                    w1[i,j] -= eta * delta * D[r,i]
+
+        # Errors (training set)
+        print("Errors: ", np.sum(error_function(t, zk)))
+
+            # print(w1, w2)
+
+    # Plot results
+    # for x in range(len(D)):
+    #     result = classify_mlp(w1, w2, D[x])
+    #     print("{}: {} -> {}".format(x[:2], result, t[x]))
 
     return w1, w2
 
@@ -253,7 +285,7 @@ def main():
     training, validation, test = generate_dataset()
 
     # Call MLP training
-    train_mlp(w1, w2, 3, 0.3, training)
+    train_mlp(w1, w2, 1, 0.01, training)
 
 # Check if the node is executing in the mzin path
 if __name__ == '__main__':
