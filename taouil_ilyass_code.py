@@ -49,8 +49,6 @@ def encode(dataset):
 
 # Decode class
 def decode(output):
-
-    # Return class (1,2,3 or 4)
     return np.argmax(output) + 1
 
 # Sigmoid function vectorization
@@ -140,9 +138,8 @@ def generate_dataset():
     return matrix[:1000], matrix[1000:1500], matrix[1500:]
 
 """
-    Classifies a point
-    using the trained
-    MLP.
+    Classifies test set
+    using trained MLP.
 """
 def classify_mlp(w1,w2,x):
 
@@ -237,9 +234,9 @@ def train_mlp(w1,w2,h,eta,D,E):
         # stop training accordingly
         # (the checking is done every
         # 30 iterations on the test set)
-        if x % 50 == 0 and val_error < evaluate_mlp(w1,w2,E):
+        if x % 30 == 0 and val_error < evaluate_mlp(w1,w2,E):
             break
-        elif x % 50 == 0 and val_error >= evaluate_mlp(w1,w2,E):
+        elif x % 30 == 0 and val_error >= evaluate_mlp(w1,w2,E):
             val_error = evaluate_mlp(w1,w2,E)
 
         # Backpropagation
@@ -287,15 +284,36 @@ def main():
     training, validation, test = generate_dataset()
 
     # Train the MLP
-    train_mlp(w1, w2, 2, 0.02, training, validation)
+    w1_update, w2_update = train_mlp(w1, w2, 4, 0.04, training, validation)
 
-    # Classify the test set
-    t = encode(test)
-    print("Results")
-    for x in range(len(test)):
-        result = classify_mlp(w1, w2, test[x])
-        # print(result)
-        print("{}: {} -> {}".format(test[:2], result, decode(t[x])))
+    # Test MLP
+    for x in range(cf.data["size"]):
+        y = classify_mlp(w1_update, w2_update, test[x])
+        print("{}: {} -> {}".format(test[x, :2], test[x, 2], y))
+        test[x, 2] = y
+
+    # Errors on test set
+    print("Errors:", evaluate_mlp(w1_update, w2_update, test))
+
+    # Plot test (as evaluated by MLP)
+    indices = np.where(test[:,2] == 1)
+    c1 = test[indices, :2]
+
+    indices = np.where(test[:,2] == 2)
+    c2 = test[indices, :2]
+
+    indices = np.where(test[:,2] == 3)
+    c3 = test[indices, :2]
+
+    indices = np.where(test[:,2] == 4)
+    c4 = test[indices, :2]
+
+    plt.plot(c1.T[0], c1.T[1], 'ro')
+    plt.plot(c2.T[0], c2.T[1], 'bo')
+    plt.plot(c3.T[0], c3.T[1], 'go')
+    plt.plot(c4.T[0], c4.T[1], 'co')
+    plt.axis([-2,2,-2,2])
+    plt.show()
 
 # Check if the node is executing in the mzin path
 if __name__ == '__main__':
