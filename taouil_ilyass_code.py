@@ -92,8 +92,8 @@ def generate_dataset():
                uniform(cf.data["c1_y_low"], cf.data["c1_y_high"], cf.data["size"]))
 
     # Generate points for class2
-    c2 = stack(np.random.uniform(cf.data["c2_x_low"], cf.data["c2_x_high"], cf.data["size"]),
-               np.random.uniform(cf.data["c2_y_low"], cf.data["c2_y_high"], cf.data["size"]))
+    c2 = stack(uniform(cf.data["c2_x_low"], cf.data["c2_x_high"], cf.data["size"]),
+               uniform(cf.data["c2_y_low"], cf.data["c2_y_high"], cf.data["size"]))
 
     # Rotate class1 and class2 points
     c1 = np.dot(c1, R)
