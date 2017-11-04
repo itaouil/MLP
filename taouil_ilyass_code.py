@@ -13,6 +13,7 @@
 
 # Import packages
 import math
+import pandas as pd
 import numpy as np
 import config as cf
 import matplotlib.pyplot as plt
@@ -106,19 +107,19 @@ def generate_dataset():
     c4 = multivariate(cf.data["c4_mean"], cf.data["c4_cov"], cf.data["size"])
 
     # Add columns of 1s to class1
-    class1 = stack(c1, np.full(cf.data["dim"], 1))
+    c1 = stack(c1, np.full(cf.data["dim"], 1))
 
     # Add columns of 2s to class2
-    class2 = stack(c2, np.full(cf.data["dim"], 2))
+    c2 = stack(c2, np.full(cf.data["dim"], 2))
 
     # Add columns of 3s to class3
-    class3 = stack(c3, np.full(cf.data["dim"], 3))
+    c3 = stack(c3, np.full(cf.data["dim"], 3))
 
     # Add columns of 4s to class4
-    class4 = stack(c4, np.full(cf.data["dim"], 4))
+    c4 = stack(c4, np.full(cf.data["dim"], 4))
 
     # Aggregate classes together in one bigger matrix (2000,3)
-    matrix = np.concatenate((class1, class2, class3, class4))
+    matrix = np.concatenate((c1, c2, c3, c4))
 
     # Randomly order data
     np.random.shuffle(matrix)
@@ -167,10 +168,10 @@ def classify_mlp(w1,w2,x):
     on the validation
     set.
 """
-def evaluate_mlp(w1,w2,D):
+def evaluate_mlp(w1,w2,D,targets):
 
     # Get targets of dataset
-    targets = encode(D)
+    # targets = encode(D)
 
     # Forward phase (hidden layer)
     # Please note that the sigmoid
@@ -178,7 +179,7 @@ def evaluate_mlp(w1,w2,D):
     # product and the result of it
     # is stacked together with a
     # bias input
-    zj = stack(vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel())
+    zj = stack(vsigmoid(np.dot(D[:, :3], w1)), np.full((np.shape(D)[0], 1), -1).ravel())
 
     # Forward phase (output layer)
     # Please note that the sigmoid
@@ -210,10 +211,22 @@ def train_mlp(w1,w2,h,eta,D,E):
     D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
 
     # Validation error
-    val_error = evaluate_mlp(w1,w2,E)
+    val_error = evaluate_mlp(w1,w2,E, encode(E))
+
+    # Errors
+    train_errors = []
+    valid_errors = []
 
     # Training + Validation
-    for x in range(1000):
+    for x in range(20000):
+
+        # Shuffle training every iteration
+        # to change the order on which the
+        # MLP is trained
+        # order = range(np.shape(D)[0])
+        # order = np.random.shuffle(order)
+        # t = np.reshape(t[order, :], (1000, 4))
+        # D = np.reshape(D[order, :], (1000, 3))
 
         # Forward phase (hidden layer)
         # Please note that the sigmoid
@@ -221,7 +234,7 @@ def train_mlp(w1,w2,h,eta,D,E):
         # product and the result of it
         # is stacked together with a
         # bias input
-        zj = np.column_stack((vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel()))
+        zj = stack(vsigmoid(np.dot(D[:, :3], w1)), np.full((np.shape(D)[0], 1), -1).ravel())
 
         # Forward phase (output layer)
         # Please note that the sigmoid
@@ -234,10 +247,14 @@ def train_mlp(w1,w2,h,eta,D,E):
         # stop training accordingly
         # (the checking is done every
         # 30 iterations on the test set)
-        if x % 30 == 0 and val_error < evaluate_mlp(w1,w2,E):
+        if x % 20 == 0 and val_error < evaluate_mlp(w1,w2,E, encode(E)):
             break
-        elif x % 30 == 0 and val_error >= evaluate_mlp(w1,w2,E):
-            val_error = evaluate_mlp(w1,w2,E)
+        elif x % 20 == 0 and val_error >= evaluate_mlp(w1,w2,E, encode(E)):
+            val_error = evaluate_mlp(w1,w2,E, encode(E))
+
+        # Store errors
+        train_errors.append(evaluate_mlp(w1, w2, D, t))
+        valid_errors.append(evaluate_mlp(w1, w2, E, encode(E)))
 
         # Backpropagation
         for r in range(len(D)):
@@ -262,13 +279,13 @@ def train_mlp(w1,w2,h,eta,D,E):
                     w1[i,j] -= eta * delta * D[r,i]
 
         # Print errors
-        print("Validation E:", evaluate_mlp(w1,w2,E))
+        print("Validation E:", evaluate_mlp(w1,w2,E, encode(E)))
 
     print("Stopped training.")
     print("Prev Eval E:", val_error)
-    print("Curr Eval E:", evaluate_mlp(w1,w2,E))
+    print("Curr Eval E:", evaluate_mlp(w1,w2,E, encode(E)))
 
-    return w1, w2
+    return w1, w2, train_errors, valid_errors
 
 """
     Main.
@@ -284,7 +301,7 @@ def main():
     training, validation, test = generate_dataset()
 
     # Train the MLP
-    w1_update, w2_update = train_mlp(w1, w2, 4, 0.04, training, validation)
+    w1_update, w2_update, train_errors, valid_errors = train_mlp(w1, w2, 2, 0.01, training, validation)
 
     # Test MLP
     for x in range(cf.data["size"]):
@@ -293,7 +310,14 @@ def main():
         test[x, 2] = y
 
     # Errors on test set
-    print("Errors:", evaluate_mlp(w1_update, w2_update, test))
+    print("Errors:", evaluate_mlp(w1_update, w2_update, test, encode(test)))
+
+    # Plot errors
+    plt.plot(train_errors)
+    plt.plot(valid_errors)
+    plt.ylabel("Errors")
+    plt.xlabel("Time")
+    plt.show()
 
     # Plot test (as evaluated by MLP)
     indices = np.where(test[:,2] == 1)
