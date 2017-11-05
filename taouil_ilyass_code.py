@@ -13,10 +13,8 @@
 
 # Import packages
 import math
-import pandas as pd
 import numpy as np
 import config as cf
-import matplotlib.pyplot as plt
 
 """
     Helper functions.
@@ -30,34 +28,41 @@ def encode(dataset):
     # classes
     targets = np.zeros((np.shape(dataset)[0], 4))
 
-    # Class1 as [1, 0, 0, 0]
+    # C1 as [1, 0, 0, 0]
     indices = np.where(dataset[:,2] == 1)
     targets[indices,0] = 1
 
-    # Class2 as [0, 1, 0, 0]
+    # C2 as [0, 1, 0, 0]
     indices = np.where(dataset[:,2] == 2)
     targets[indices,1] = 1
 
-    # Class3 as [0, 0, 1, 0]
+    # C3 as [0, 0, 1, 0]
     indices = np.where(dataset[:,2] == 3)
     targets[indices,2] = 1
 
-    # Class4 as [0, 0, 0, 1]
+    # C4 as [0, 0, 0, 1]
     indices = np.where(dataset[:,2] == 4)
     targets[indices,3] = 1
 
     return targets
 
-# Decode class
+# Create np array with specific value
+def full(size, value):
+    return np.full(size, value)
+
+# Decode class encoding
+# Example: [0,0,0,1] to 4
 def decode(output):
     return np.argmax(output) + 1
 
 # Sigmoid function vectorization
+# to be able to apply it to the
+# whole matrix
 def vsigmoid(x):
     f = np.vectorize(lambda x: 1 / (1 + np.exp(-x)))
     return f(x)
 
-# Sum of Squared Difference function
+# Sum of squared differences
 def error_function(targets, outputs):
     f = np.vectorize(lambda x,y: 0.5 * (x - y) ** 2)
     return f(targets, outputs)
@@ -84,10 +89,6 @@ def multivariate(mean, cov, size):
 """
 def generate_dataset():
 
-    # Rotation matrix (R)
-    R = np.array([ [math.cos(cf.data["angle"]), -math.sin(cf.data["angle"])],
-                   [math.sin(cf.data["angle"]), math.cos(cf.data["angle"])] ])
-
     # Generate points for class1
     c1 = stack(uniform(cf.data["c1_x_low"], cf.data["c1_x_high"], cf.data["size"]),
                uniform(cf.data["c1_y_low"], cf.data["c1_y_high"], cf.data["size"]))
@@ -95,6 +96,10 @@ def generate_dataset():
     # Generate points for class2
     c2 = stack(uniform(cf.data["c2_x_low"], cf.data["c2_x_high"], cf.data["size"]),
                uniform(cf.data["c2_y_low"], cf.data["c2_y_high"], cf.data["size"]))
+
+    # Rotation matrix (R)
+    R = np.array([ [math.cos(cf.data["angle"]), -math.sin(cf.data["angle"])],
+                   [math.sin(cf.data["angle"]), math.cos(cf.data["angle"])] ])
 
     # Rotate class1 and class2 points
     c1 = np.dot(c1, R)
@@ -107,16 +112,16 @@ def generate_dataset():
     c4 = multivariate(cf.data["c4_mean"], cf.data["c4_cov"], cf.data["size"])
 
     # Add columns of 1s to class1
-    c1 = stack(c1, np.full(cf.data["dim"], 1))
+    c1 = stack(c1, full(cf.data["dim"], 1))
 
     # Add columns of 2s to class2
-    c2 = stack(c2, np.full(cf.data["dim"], 2))
+    c2 = stack(c2, full(cf.data["dim"], 2))
 
     # Add columns of 3s to class3
-    c3 = stack(c3, np.full(cf.data["dim"], 3))
+    c3 = stack(c3, full(cf.data["dim"], 3))
 
     # Add columns of 4s to class4
-    c4 = stack(c4, np.full(cf.data["dim"], 4))
+    c4 = stack(c4, full(cf.data["dim"], 4))
 
     # Aggregate classes together in one bigger matrix (2000,3)
     matrix = np.concatenate((c1, c2, c3, c4))
@@ -126,14 +131,6 @@ def generate_dataset():
 
     # Normalise dataset
     matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
-
-    # Plot classes' points
-    # plt.plot(c1.T[0], c1.T[1], 'ro')
-    # plt.plot(c2.T[0], c2.T[1], 'bo')
-    # plt.plot(c3.T[0], c3.T[1], 'go')
-    # plt.plot(c4.T[0], c4.T[1], 'co')
-    # plt.axis([-10,7,-10,6])
-    # plt.show()
 
     # Returns training, evaluation and testing sets
     return matrix[:1000], matrix[1000:1500], matrix[1500:]
@@ -145,16 +142,17 @@ def generate_dataset():
 def classify_mlp(w1,w2,x):
 
     # Forward phase (hidden layer)
+    #
     # Please note that the sigmoid
     # is applied directly to the dot
     # product and the result of it
     # is stacked together with a
-    # bias input
-    # print(np.shape(vsigmoid(np.dot(x, w1))))
-    # print(np.shape(x))
+    # bias input scalar value using
+    # the append routine
     zj = np.append(vsigmoid(np.dot(x, w1)), -1)
 
     # Forward phase (output layer)
+    #
     # Please note that the sigmoid
     # function is applied directly
     # to the dot product
@@ -168,20 +166,22 @@ def classify_mlp(w1,w2,x):
     on the validation
     set.
 """
-def evaluate_mlp(w1,w2,D,targets):
+def evaluate_mlp(w1,w2,D):
 
     # Get targets of dataset
-    # targets = encode(D)
+    targets = encode(D)
 
     # Forward phase (hidden layer)
+    #
     # Please note that the sigmoid
     # is applied directly to the dot
     # product and the result of it
     # is stacked together with a
-    # bias input
-    zj = stack(vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel())
+    # bias input vector
+    zj = stack(vsigmoid(np.dot(D, w1)), full((np.shape(D)[0], 1), -1).ravel())
 
     # Forward phase (output layer)
+    #
     # Please note that the sigmoid
     # function is applied directly
     # to the dot product
@@ -208,14 +208,10 @@ def train_mlp(w1,w2,h,eta,D,E):
     t = encode(D)
 
     # Add bias input to D (in place of target)
-    D[:, 2] = np.full((np.shape(D)[0], 1), -1).ravel()
+    D[:, 2] = full((np.shape(D)[0], 1), -1).ravel()
 
     # Validation error
-    val_error = evaluate_mlp(w1,w2,E, encode(E))
-
-    # Errors
-    train_errors = []
-    valid_errors = []
+    val_error = evaluate_mlp(w1,w2,E)
 
     # Training + Validation
     for x in range(20000):
@@ -229,14 +225,16 @@ def train_mlp(w1,w2,h,eta,D,E):
         D = np.reshape(D[order, :], (1000, 3))
 
         # Forward phase (hidden layer)
+        #
         # Please note that the sigmoid
         # is applied directly to the dot
         # product and the result of it
         # is stacked together with a
-        # bias input
-        zj = stack(vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel())
+        # bias input vector
+        zj = stack(vsigmoid(np.dot(D, w1)), full((np.shape(D)[0], 1), -1).ravel())
 
         # Forward phase (output layer)
+        #
         # Please note that the sigmoid
         # function is applied directly
         # to the dot product
@@ -246,20 +244,16 @@ def train_mlp(w1,w2,h,eta,D,E):
         # the validation set and
         # stop training accordingly
         # (the checking is done every
-        # 30 iterations on the test set)
-        if x % 50 == 0 and val_error < evaluate_mlp(w1,w2,E, encode(E)):
+        # 50 iterations on the validation
+        # set)
+        if x % 50 == 0 and val_error < evaluate_mlp(w1,w2,E):
             break
-        elif x % 50 == 0 and val_error >= evaluate_mlp(w1,w2,E, encode(E)):
-            val_error = evaluate_mlp(w1,w2,E, encode(E))
-
-        # Store errors
-        train_errors.append(evaluate_mlp(w1, w2, D, t))
-        valid_errors.append(evaluate_mlp(w1, w2, E, encode(E)))
+        elif x % 50 == 0 and val_error >= evaluate_mlp(w1,w2,E):
+            val_error = evaluate_mlp(w1,w2,E)
 
         # Backpropagation
         for r in range(len(D)):
 
-            # Caching deltak
             deltak = []
 
             # Outer neurons wjk update
@@ -270,6 +264,7 @@ def train_mlp(w1,w2,h,eta,D,E):
                     w2[j,k] -= eta * delta * zj[r,j]
                     tmp += delta * w2[j,k]
 
+                # Caching deltak
                 deltak.append(tmp)
 
             # Inner neurons wij update
@@ -278,14 +273,7 @@ def train_mlp(w1,w2,h,eta,D,E):
                     delta = zj[r,j] * (1 - zj[r,j]) * deltak[j]
                     w1[i,j] -= eta * delta * D[r,i]
 
-        # Print errors
-        print("Validation E:", evaluate_mlp(w1,w2,E, encode(E)))
-
-    print("Stopped training.")
-    print("Prev Eval E:", val_error)
-    print("Curr Eval E:", evaluate_mlp(w1,w2,E, encode(E)))
-
-    return w1, w2, train_errors, valid_errors
+    return w1, w2
 
 """
     Main.
@@ -301,10 +289,7 @@ def main():
     training, validation, test = generate_dataset()
 
     # Train the MLP
-    w1_update, w2_update, train_errors, valid_errors = train_mlp(w1, w2, 2, 0.01, training, validation)
-
-    # Y for confusion matrix
-    y_confmatr = []
+    w1_update, w2_update = train_mlp(w1, w2, 2, 0.01, training, validation)
 
     # Test MLP
     for x in range(cf.data["size"]):
@@ -313,41 +298,8 @@ def main():
         print("{}: {} -> {}".format(test[x, :2], test[x, 2], y))
         test[x, 2] = y
 
-    # Confusion matrix
-    # y_actu = pd.Series(y_confmatr, name='Actual')
-    # y_pred = pd.Series(test[:, 2], name='Predicted')
-    # df_confusion = pd.crosstab(y_actu, y_pred)
-    # print(df_confusion)
-
     # Errors on test set
     print("Errors:", evaluate_mlp(w1_update, w2_update, test, encode(test)))
-
-    # Plot errors
-    # plt.plot(train_errors)
-    # plt.plot(valid_errors)
-    # plt.ylabel("Errors [SSD]")
-    # plt.xlabel("Time [Epochs]")
-    # plt.show()
-
-    # Plot test (as evaluated by MLP)
-    indices = np.where(test[:,2] == 1)
-    c1 = test[indices, :2]
-
-    indices = np.where(test[:,2] == 2)
-    c2 = test[indices, :2]
-
-    indices = np.where(test[:,2] == 3)
-    c3 = test[indices, :2]
-
-    indices = np.where(test[:,2] == 4)
-    c4 = test[indices, :2]
-
-    plt.plot(c1.T[0], c1.T[1], 'ro')
-    plt.plot(c2.T[0], c2.T[1], 'bo')
-    plt.plot(c3.T[0], c3.T[1], 'go')
-    plt.plot(c4.T[0], c4.T[1], 'co')
-    plt.axis([-2,2,-2,2])
-    plt.show()
 
 # Check if the node is executing in the mzin path
 if __name__ == '__main__':
