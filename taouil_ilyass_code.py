@@ -179,7 +179,7 @@ def evaluate_mlp(w1,w2,D,targets):
     # product and the result of it
     # is stacked together with a
     # bias input
-    zj = stack(vsigmoid(np.dot(D[:, :3], w1)), np.full((np.shape(D)[0], 1), -1).ravel())
+    zj = stack(vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel())
 
     # Forward phase (output layer)
     # Please note that the sigmoid
@@ -223,10 +223,10 @@ def train_mlp(w1,w2,h,eta,D,E):
         # Shuffle training every iteration
         # to change the order on which the
         # MLP is trained
-        # order = range(np.shape(D)[0])
-        # order = np.random.shuffle(order)
-        # t = np.reshape(t[order, :], (1000, 4))
-        # D = np.reshape(D[order, :], (1000, 3))
+        order = list(range(np.shape(D)[0]))
+        order = np.random.shuffle(order)
+        t = np.reshape(t[order, :], (1000, 4))
+        D = np.reshape(D[order, :], (1000, 3))
 
         # Forward phase (hidden layer)
         # Please note that the sigmoid
@@ -234,7 +234,7 @@ def train_mlp(w1,w2,h,eta,D,E):
         # product and the result of it
         # is stacked together with a
         # bias input
-        zj = stack(vsigmoid(np.dot(D[:, :3], w1)), np.full((np.shape(D)[0], 1), -1).ravel())
+        zj = stack(vsigmoid(np.dot(D, w1)), np.full((np.shape(D)[0], 1), -1).ravel())
 
         # Forward phase (output layer)
         # Please note that the sigmoid
@@ -247,9 +247,9 @@ def train_mlp(w1,w2,h,eta,D,E):
         # stop training accordingly
         # (the checking is done every
         # 30 iterations on the test set)
-        if x % 20 == 0 and val_error < evaluate_mlp(w1,w2,E, encode(E)):
+        if x % 50 == 0 and val_error < evaluate_mlp(w1,w2,E, encode(E)):
             break
-        elif x % 20 == 0 and val_error >= evaluate_mlp(w1,w2,E, encode(E)):
+        elif x % 50 == 0 and val_error >= evaluate_mlp(w1,w2,E, encode(E)):
             val_error = evaluate_mlp(w1,w2,E, encode(E))
 
         # Store errors
@@ -303,21 +303,31 @@ def main():
     # Train the MLP
     w1_update, w2_update, train_errors, valid_errors = train_mlp(w1, w2, 2, 0.01, training, validation)
 
+    # Y for confusion matrix
+    y_confmatr = []
+
     # Test MLP
     for x in range(cf.data["size"]):
         y = classify_mlp(w1_update, w2_update, test[x])
+        y_confmatr.append(test[x, 2])
         print("{}: {} -> {}".format(test[x, :2], test[x, 2], y))
         test[x, 2] = y
+
+    # Confusion matrix
+    # y_actu = pd.Series(y_confmatr, name='Actual')
+    # y_pred = pd.Series(test[:, 2], name='Predicted')
+    # df_confusion = pd.crosstab(y_actu, y_pred)
+    # print(df_confusion)
 
     # Errors on test set
     print("Errors:", evaluate_mlp(w1_update, w2_update, test, encode(test)))
 
     # Plot errors
-    plt.plot(train_errors)
-    plt.plot(valid_errors)
-    plt.ylabel("Errors")
-    plt.xlabel("Time")
-    plt.show()
+    # plt.plot(train_errors)
+    # plt.plot(valid_errors)
+    # plt.ylabel("Errors [SSD]")
+    # plt.xlabel("Time [Epochs]")
+    # plt.show()
 
     # Plot test (as evaluated by MLP)
     indices = np.where(test[:,2] == 1)
