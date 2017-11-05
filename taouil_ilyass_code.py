@@ -25,7 +25,7 @@ def encode(dataset):
 
     # Create nx4 vector to
     # to hold the dataset
-    # classes
+    # targets
     targets = np.zeros((np.shape(dataset)[0], 4))
 
     # C1 as [1, 0, 0, 0]
@@ -57,12 +57,14 @@ def decode(output):
 
 # Sigmoid function vectorization
 # to be able to apply it to the
-# whole matrix
+# whole matrix as a function
 def vsigmoid(x):
     f = np.vectorize(lambda x: 1 / (1 + np.exp(-x)))
     return f(x)
 
-# Sum of squared differences
+# Sum of squared differences function
+# vectorization as to be easily applied
+# to the target and ouput matrices
 def error_function(targets, outputs):
     f = np.vectorize(lambda x,y: 0.5 * (x - y) ** 2)
     return f(targets, outputs)
@@ -83,9 +85,6 @@ def multivariate(mean, cov, size):
     Generates datasets and
     returns the three sets
     for the MLP algorithm.
-
-    Input   : None
-    Output  : Array of arrays
 """
 def generate_dataset():
 
@@ -129,7 +128,7 @@ def generate_dataset():
     # Randomly order data
     np.random.shuffle(matrix)
 
-    # Normalise dataset
+    # Normalise dataset (except targets)
     matrix[:,:2] = (matrix[:,:2] - matrix[:,:2].mean(axis=0)) / matrix[:,:2].var(axis=0)
 
     # Returns training, evaluation and testing sets
@@ -168,7 +167,8 @@ def classify_mlp(w1,w2,x):
 """
 def evaluate_mlp(w1,w2,D):
 
-    # Get targets of dataset
+    # Get targets for
+    # the dataset
     targets = encode(D)
 
     # Forward phase (hidden layer)
@@ -198,11 +198,10 @@ def evaluate_mlp(w1,w2,D):
     forward fit, followed
     by the backpropagation
     phase.
-
-    Input   : w1, w2, # of hidden nodes, step size, training set, evalutaion set
-    Output  : Updated weights
 """
 def train_mlp(w1,w2,h,eta,D,E):
+
+    print("Training ...")
 
     # Get targets for training dataset
     t = encode(D)
@@ -264,7 +263,9 @@ def train_mlp(w1,w2,h,eta,D,E):
                     w2[j,k] -= eta * delta * zj[r,j]
                     tmp += delta * w2[j,k]
 
-                # Caching deltak
+                # Caching deltak for
+                # usage in the hidden
+                # layer update
                 deltak.append(tmp)
 
             # Inner neurons wij update
@@ -294,12 +295,10 @@ def main():
     # Test MLP
     for x in range(cf.data["size"]):
         y = classify_mlp(w1_update, w2_update, test[x])
-        y_confmatr.append(test[x, 2])
         print("{}: {} -> {}".format(test[x, :2], test[x, 2], y))
-        test[x, 2] = y
 
     # Errors on test set
-    print("Errors:", evaluate_mlp(w1_update, w2_update, test, encode(test)))
+    print("Test errors:", evaluate_mlp(w1_update, w2_update, test))
 
 # Check if the node is executing in the mzin path
 if __name__ == '__main__':
