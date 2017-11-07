@@ -1,2 +1,3 @@
 # MLP-Coursework
-Coursework for my Machine Learning module.
+
+Implemented a Multi-Layer-Perceptron (MLP) from scratch using python and the numpy library for my final year Machine Learning coursework.
